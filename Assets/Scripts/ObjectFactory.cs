@@ -1,6 +1,7 @@
 using UnityEngine;
 
-public class ObjectFactory : MonoBehaviour {
+public class ObjectFactory : MonoBehaviour 
+{
 
 //==============================================================================
 // Fields
@@ -15,7 +16,8 @@ public class ObjectFactory : MonoBehaviour {
 // Lifecycle
 //==============================================================================
 
-    private void Awake() {
+    private void Awake() 
+    {
         _instance = this;
     }
     
@@ -23,12 +25,14 @@ public class ObjectFactory : MonoBehaviour {
 // Methods
 //==============================================================================
 
-    public static Banner CreateBanner(Board board, bool hasWon = false, Vector3 vector = new Vector3()) {
+    public static Banner CreateBanner(Board board, bool hasWon = false, Vector3 vector = new Vector3()) 
+    {
         var banner = Instantiate(_instance.banner, vector, Quaternion.identity).GetComponent<Banner>();
         return banner.Init(board, hasWon);
     }
     
-    public static Token CreateToken(int id, Board board, Vector3 vector = new Vector3()) {
+    public static Token CreateToken(int id, Board board, Vector3 vector = new Vector3()) 
+    {
         var token = Instantiate(_instance.token, vector, Quaternion.identity).GetComponent<Token>();
         return token.Init(id, board);
     }

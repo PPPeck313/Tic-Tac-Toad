@@ -7,16 +7,7 @@ using UnityEngine.AddressableAssets;
 public class Token : MonoBehaviour
 {
 
-//==============================================================================
-// Constants
-//==============================================================================
-
-    private const string TokenLabel = "token";
-    
-    private const string P1Sprite = "frog";
-    private const string P2Sprite = "toad";
-
-    private static readonly string[] PlayerSprites = {P1Sprite,  P2Sprite};
+    private static readonly string[] PlayerSprites = {Resources.P1Sprite,  Resources.P2Sprite};
 
 //==============================================================================
 // Fields
@@ -54,7 +45,7 @@ public class Token : MonoBehaviour
     
     private void Start()
     {
-        InitSprites(TokenLabel);
+        InitSprites(Resources.TokenLabel);
     }
     
 //==============================================================================
@@ -84,15 +75,22 @@ public class Token : MonoBehaviour
 // Listeners
 //==============================================================================
 
-    private void OnMouseDown() 
+    public void OnMouseDown() 
     {
-        if (!isDisabled && _sprites.Any())
+        if (!isDisabled 
+            && !_board.isDisabled
+            && _sprites.Any())
         {
-            playerOwner = _board.GetPlayerTurn();
-            _spriteRenderer.sprite = _sprites[PlayerSprites[playerOwner]];
-            isDisabled = true;
-            
-            _board.FinishTurn(id);
+            TakeTurn();
         }
+    }
+
+    public void TakeTurn()
+    {
+        playerOwner = _board.GetPlayerTurn();
+        _spriteRenderer.sprite = _sprites[PlayerSprites[playerOwner]];
+        isDisabled = true;
+            
+        _board.FinishTurn(id);
     }
 }

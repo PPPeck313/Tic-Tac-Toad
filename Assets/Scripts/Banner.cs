@@ -6,16 +6,7 @@ using UnityEngine.AddressableAssets;
 
 public class Banner : MonoBehaviour 
 {
-    
-//==============================================================================
-// Constants
-//==============================================================================
 
-    private const string BannerLabel = "banner";
-    
-    private const string WinSprite = "win";
-    private const string LoseSprite = "lose";
-    
 //==============================================================================
 // Fields
 //==============================================================================
@@ -50,8 +41,8 @@ public class Banner : MonoBehaviour
     
     private async void Start()
     {
-        await InitSprites(BannerLabel);
-        _spriteRenderer.sprite = _sprites[_hasWon ? WinSprite : LoseSprite];
+        await InitSprites(Resources.BannerLabel);
+        _spriteRenderer.sprite = _sprites[_hasWon ? Resources.WinSprite : Resources.LoseSprite];
     }
     
     private async Task InitSprites(string assetLabel)

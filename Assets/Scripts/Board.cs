@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Board : MonoBehaviour 
 {
@@ -12,10 +14,14 @@ public class Board : MonoBehaviour
 
     private const int Rows = 3;
     private const int Columns = 3;
-    private const int Players = 2;
     private const int InARowRequired = 3;
 
-    private const int OneBasedIndexing = 1;
+    private static readonly PlayerType[] Players = { PlayerType.Human,  PlayerType.AI };
+    private const int AIDelay = 2;
+    
+    public const int OneBasedIndexing = 1;
+    
+    public bool isDisabled;
 
 //==============================================================================
 // Fields
@@ -30,6 +36,10 @@ public class Board : MonoBehaviour
     private int _turn;
     private readonly Dictionary<int, List<List<int>>> _victoryRoutes = new Dictionary<int, List<List<int>>>();
 
+    private List<Player> _players = new List<Player>();
+
+    private MoveController _moveController;
+    
 //==============================================================================
 // Lifecycle
 //==============================================================================
@@ -38,15 +48,29 @@ public class Board : MonoBehaviour
     {
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _bounds = _spriteRenderer.bounds;
-            
+
+        GeneratePlayers();
         GenerateTokens();
         GenerateRoutes();
+        
+        _moveController = new MoveController(Rows, Columns, InARowRequired, 
+            _tokens, 
+            _victoryRoutes,
+            _players);
     }
     
 //==============================================================================
 // Initialize
 //==============================================================================
 
+    private void GeneratePlayers()
+    {
+        for (var i = 0; i < Players.Length; i++)
+        {
+            _players.Add(new Player(i, Players[i]));
+        }
+    }
+    
     private void GenerateTokens() 
     {
         const int numTokens = Rows * Columns;
@@ -148,39 +172,14 @@ public class Board : MonoBehaviour
 // Methods
 //==============================================================================
 
-    private bool CheckWinCondition(int index) 
+    public int GetPlayerTurn()
     {
-        var indexVictoryRoutes = _victoryRoutes[index];
-
-        foreach (var indexVictoryRoute in indexVictoryRoutes) 
-        {
-            var numContiguousTokens = 0;
-            
-            foreach (var id in indexVictoryRoute) 
-            {
-                if (_tokens[id - OneBasedIndexing].playerOwner == GetPlayerTurn())
-                {
-                    numContiguousTokens = ++numContiguousTokens;
-
-                    if (numContiguousTokens == InARowRequired)
-                    {
-                        return true;
-                    }
-                }
-
-                else 
-                {
-                    numContiguousTokens = 0;
-                }
-            }
-        }
-
-        return false;
+        return _turn % _players.Count;
     }
-
+    
     private bool IsBoardExhausted()
     {
-        return _tokens.All(token => token.isDisabled);
+        return _tokens.All(token => token.playerOwner > -1);
     }
 
     private void DisableTokens()
@@ -190,17 +189,17 @@ public class Board : MonoBehaviour
             token.isDisabled = true;
         }
     }
-    public int GetPlayerTurn()
-    {
-        return _turn % Players;
-    }
 
+    
+    
     public void FinishTurn(int index)
     {
-        if (CheckWinCondition(index))
+        var playerId = GetPlayerTurn();
+        
+        if (_moveController.CheckWinCondition(index, GetPlayerTurn(), InARowRequired) != null)
         {
             DisableTokens();
-            _banner = ObjectFactory.CreateBanner(this, true);
+            _banner = ObjectFactory.CreateBanner(this, _players[playerId].playerType != PlayerType.AI);
         }
 
         else if (IsBoardExhausted())
@@ -210,7 +209,36 @@ public class Board : MonoBehaviour
 
         else
         {
-            _turn = ++_turn;
+            _turn += 1;
+            var newPlayerId = GetPlayerTurn();
+
+            if (_players[newPlayerId].playerType == PlayerType.AI)
+            {
+                StartCoroutine(TakeAITurn(newPlayerId));
+            }
+        }
+    }
+
+    private IEnumerator TakeAITurn(int playerId)
+    {
+        isDisabled = true;
+
+        yield return new WaitForSeconds(AIDelay);
+
+        var token = _moveController.GetWinningMove(playerId);
+        token = token == null ? _moveController.GetDefendingMove(playerId) : token;
+        token = token == null ? _tokens[Random.Range(0, Rows * Columns)] : token;
+        
+        while (true)
+        {
+            if (token.playerOwner == -1)
+            {
+                token.TakeTurn();
+                isDisabled = false;
+                break;
+            }
+
+            token = _tokens[Random.Range(0, Rows * Columns)];
         }
     }
 
